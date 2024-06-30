@@ -134,11 +134,6 @@ mkdir -p /etc
 echo "[user]" >> /etc/wsl.conf
 echo "default=$username" >> /etc/wsl.conf
 
-# Set up shared session D-Bus
-mkdir -p /run/user/$(id -u $username)
-echo "export XDG_RUNTIME_DIR=/run/user/$(id -u $username)" >> /home/$username/.bashrc
-echo "dbus-daemon --session --fork --address=\$XDG_RUNTIME_DIR/bus" >> /home/$username/.bashrc
-
 # Clean up
 rm /root/setup_debian.sh
 '@ -replace "`r`n", "`n" | Set-Content -Path $setupScriptPath -Force -NoNewline -Encoding UTF8

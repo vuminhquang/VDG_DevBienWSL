@@ -10,6 +10,12 @@ echo_message "Updating package list and installing necessary packages..."
 sudo apt-get update
 sudo apt-get install -y fontconfig
 
+sudo apt-get install -y xfonts-100dpi xfonts-75dpi
+sudo mkfontdir /usr/share/fonts/X11/100dpi
+sudo mkfontdir /usr/share/fonts/X11/75dpi
+sudo mkfontscale /usr/share/fonts/X11/100dpi
+sudo mkfontscale /usr/share/fonts/X11/75dpi
+
 # Create font directory
 echo_message "Creating font directory..."
 mkdir -p ~/.local/share/fonts
