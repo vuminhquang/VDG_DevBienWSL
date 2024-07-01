@@ -8,6 +8,6 @@ echo_message() {
 # Install zlib
 echo_message "Installing zlib..."
 sudo apt-get update
-sudo apt-get install -y zlib1g-dev || { echo_message "Failed to install zlib."; exit 1; }
+sudo apt-get install -y zlib1g-dev libsecret-1-0 gnome-keyring || { echo_message "Failed to install zlib."; exit 1; }
 
 echo_message "zlib installation complete."
