@@ -8,7 +8,7 @@ echo_message() {
 # Update package list and install necessary packages
 echo_message "Updating package list and installing necessary packages..."
 sudo apt-get update
-sudo apt-get install -y fontconfig
+sudo apt-get install -y fontconfig fonts-inter
 
 sudo apt-get install -y xfonts-100dpi xfonts-75dpi
 sudo mkfontdir /usr/share/fonts/X11/100dpi
