@@ -171,7 +171,7 @@ wsl --distribution $wslName --user root -- bash -c "$envVars bash /root/setup_de
 
 # New Section: Run asset/setup_nvidia.ps1
 $setupNvidiaScriptPath = Join-Path -Path $scriptDirectory -ChildPath "asset/setup_nvidia.ps1"
-if (Test-Path -Path $setupNvidiaScriptPath)) {
+if (Test-Path -Path $setupNvidiaScriptPath) {
     Write-Message "Running PowerShell script asset/setup_nvidia.ps1 locally..."
     & $setupNvidiaScriptPath
 } else {
