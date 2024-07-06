@@ -50,7 +50,7 @@ Set-Content -Path $wslNameFile -Value $wslName
 Write-Message "WSL instance name saved to $wslNameFile"
 
 # Prompt user for the path to store WSL
-$wslStoragePath = Prompt-ForPath -promptMessage "Enter the path where you want WSL to store $wslName:"
+$wslStoragePath = Prompt-ForPath -promptMessage "Enter the path where you want WSL to store `${wslName}:"
 
 # Save the storage path to a file for later cleanup
 $storagePathFile = Join-Path -Path $setupDataDirectory -ChildPath "wsl_storage_path.txt"
