@@ -26,7 +26,9 @@ curl -fsSL https://deb.nodesource.com/setup_$NODEJS_VERSION.x | sudo -E bash - |
 
 # Install Node.js
 echo_message "Installing Node.js version $NODEJS_VERSION..."
-sudo apt-get install -y nodejs || { echo_message "Failed to install Node.js."; exit 1; }
+#sudo apt-get install -y nodejs || { echo_message "Failed to install Node.js."; exit 1; }
+# install nsolid (which is node, to have npm too, if apt install nodejs only there will have no npm ins)
+sudo apt-get install nsolid -y || { echo_message "Failed to install Node.js."; exit 1; }
 
 # Verify the installation
 echo_message "Verifying Node.js installation..."
