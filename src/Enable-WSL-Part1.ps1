@@ -1,4 +1,4 @@
-# PowerShell script to enable the newest version of WSL on Windows 11
+# PowerShell script to disable WSL and schedule a task to continue after reboot
 
 function Write-Message {
     param (
@@ -38,31 +38,13 @@ dism.exe /online /disable-feature /featurename:Microsoft-Windows-Subsystem-Linux
 Write-Message "Disabling Virtual Machine Platform feature if already enabled..."
 dism.exe /online /disable-feature /featurename:VirtualMachinePlatform /norestart
 
-Write-Message "Restarting the system to apply changes..."
-Restart-Computer -Force
-
-# The script will continue after the reboot
-Write-Message "Enabling the WSL feature..."
-dism.exe /online /enable-feature /featurename:Microsoft-Windows-Subsystem-Linux /all /norestart
-
-Write-Message "Enabling the Virtual Machine Platform feature..."
-dism.exe /online /enable-feature /featurename:VirtualMachinePlatform /all /norestart
+# Schedule the second part of the script to run at startup after first reboot
+$scriptPath = Join-Path -Path $PSScriptRoot -ChildPath "Enable-WSL-Part2.ps1"
+$taskName = "CompleteWSLSetup1"
+$action = New-ScheduledTaskAction -Execute "PowerShell.exe" -Argument "-File `"$scriptPath`""
+$trigger = New-ScheduledTaskTrigger -AtStartup
+$principal = New-ScheduledTaskPrincipal -UserId "SYSTEM" -LogonType ServiceAccount -RunLevel Highest
+Register-ScheduledTask -Action $action -Trigger $trigger -Principal $principal -TaskName $taskName
 
 Write-Message "Restarting the system to apply changes..."
 Restart-Computer -Force
-
-# The script will continue after the second reboot
-Write-Message "Installing the latest version of WSL from the Microsoft Store..."
-Invoke-WebRequest -Uri "https://aka.ms/wslstorepage" -OutFile "$env:TEMP\wsl.msixbundle"
-Start-Process "explorer.exe" -ArgumentList "$env:TEMP\wsl.msixbundle"
-
-Write-Message "Setting WSL 2 as the default version..."
-wsl --set-default-version 2
-
-Write-Message "Installing the latest WSL kernel update..."
-wsl --update
-
-Write-Message "Verifying WSL installation..."
-wsl --version
-
-Write-Message "Installation and setup of WSL completed successfully!"
