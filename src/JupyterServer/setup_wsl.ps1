@@ -50,7 +50,7 @@ Set-Content -Path $wslNameFile -Value $wslName
 Write-Message "WSL instance name saved to $wslNameFile"
 
 # Prompt user for the path to store WSL
-$wslStoragePath = Prompt-ForPath -promptMessage "Enter the path where you want WSL to store `${wslName}:"
+$wslStoragePath = Prompt-ForPath -promptMessage "Enter the path where you want WSL to store $($wslName):"
 
 # Save the storage path to a file for later cleanup
 $storagePathFile = Join-Path -Path $setupDataDirectory -ChildPath "wsl_storage_path.txt"
@@ -169,13 +169,13 @@ Write-Output $envVars
 Write-Message "Running the setup script in WSL..."
 wsl --distribution $wslName --user root -- bash -c "$envVars bash /root/setup_debian.sh"
 
-# New Section: Run asset/setup_nvidia.ps1
-$setupNvidiaScriptPath = Join-Path -Path $scriptDirectory -ChildPath "asset/setup_nvidia.ps1"
+# New Section: Run assets/setup_nvidia.ps1
+$setupNvidiaScriptPath = Join-Path -Path $scriptDirectory -ChildPath "assets/setup_nvidia.ps1"
 if (Test-Path -Path $setupNvidiaScriptPath) {
-    Write-Message "Running PowerShell script asset/setup_nvidia.ps1 locally..."
+    Write-Message "Running PowerShell script assets/setup_nvidia.ps1 locally..."
     & $setupNvidiaScriptPath
 } else {
-    Write-Message "No PowerShell script found at asset/setup_nvidia.ps1."
+    Write-Message "No PowerShell script found at assets/setup_nvidia.ps1."
 }
 
 # New Section: Execute all .ps1 files in assets/ps1

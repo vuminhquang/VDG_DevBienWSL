@@ -29,7 +29,7 @@ $setupDataDirectory = Join-Path -Path $scriptDirectory -ChildPath "setup_data"
 $wslNameFile = Join-Path -Path $setupDataDirectory -ChildPath "wsl_name.txt"
 if (Test-Path -Path $wslNameFile) {
     $wslName = Get-Content -Path $wslNameFile
-    Write-Message "WSL instance name read from $wslNameFile: $wslName"
+    Write-Message "WSL instance name read from $($wslNameFile): $($wslName)"
 } else {
     Write-Host "WSL instance name file not found. Exiting cleanup." -ForegroundColor Red
     exit 1
@@ -49,7 +49,7 @@ wsl --unregister $wslName
 $storagePathFile = Join-Path -Path $setupDataDirectory -ChildPath "wsl_storage_path.txt"
 if (Test-Path -Path $storagePathFile) {
     $wslStoragePath = Get-Content -Path $storagePathFile
-    Write-Message "Storage path read from $storagePathFile: $wslStoragePath"
+    Write-Message "Storage path read from $($storagePathFile): $($wslStoragePath)"
 
     # Remove the storage path directory if it exists
     if (Test-Path -Path $wslStoragePath) {
