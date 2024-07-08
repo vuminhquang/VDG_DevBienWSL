@@ -72,22 +72,6 @@ if (Download-File -url $geforceExperienceUrl -outputPath $geforceExperiencePath)
     Write-Host "Failed to download GeForce Experience. Continuing with setup." -ForegroundColor Yellow
 }
 
-# Ensure WSL configuration file enables GPU support
-$wslConfigPath = "$env:USERPROFILE\.wslconfig"
-if (-Not (Test-Path -Path $wslConfigPath)) {
-    Write-Message "Creating .wslconfig to enable GPU support..."
-    "[wsl2]`ngpu=true" | Set-Content -Path $wslConfigPath -Force
-} else {
-    $wslConfigContent = Get-Content -Path $wslConfigPath
-    if ($wslConfigContent -notcontains "[wsl2]") {
-        Add-Content -Path $wslConfigPath -Value "[wsl2]"
-        Add-Content -Path $wslConfigPath -Value "gpu=true"
-    } elseif ($wslConfigContent -notcontains "gpu=true") {
-        Add-Content -Path $wslConfigPath -Value "gpu=true"
-    }
-    Write-Message ".wslconfig updated to enable GPU support."
-}
-
 # Create a script to set up CUDA and NVIDIA runtime in WSL
 $setupCudaScript = @'
 #!/bin/bash
