@@ -179,7 +179,7 @@ wsl --terminate $wslName
 $setupNvidiaScriptPath = Join-Path -Path $scriptDirectory -ChildPath "assets/setup_nvidia.ps1"
 if (Test-Path -Path $setupNvidiaScriptPath) {
     Write-Message "Running PowerShell script assets/setup_nvidia.ps1 locally..."
-    & $setupNvidiaScriptPath
+    & $setupNvidiaScriptPath -wslName $wslName -username $username
 } else {
     Write-Message "No PowerShell script found at assets/setup_nvidia.ps1."
 }
