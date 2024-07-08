@@ -124,7 +124,7 @@ function Convert-WindowsPathToWslPath {
 # Create setup_debian.sh if it doesn't already exist
 $setupScriptPath = Join-Path -Path $scriptDirectory -ChildPath "assets/setup_debian.sh"
 if (-Not (Test-Path -Path $setupScriptPath)) {
-@'
+@"
 #!/bin/bash
 set -e
 
@@ -135,17 +135,19 @@ apt-get install -y sudo iproute2 curl wget dbus
 
 # Create user
 useradd -m -s /bin/bash $username
-echo "$username:$passwordPlain" | chpasswd
-echo "$username ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
+echo '${username}:${passwordPlain}' | chpasswd
+echo '${username} ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers
 
-# Configure default user in wsl.conf
+# Configure default user and enable systemd in wsl.conf
 mkdir -p /etc
-echo "[user]" >> /etc/wsl.conf
-echo "default=$username" >> /etc/wsl.conf
+echo '[user]' >> /etc/wsl.conf
+echo 'default=${username}' >> /etc/wsl.conf
+echo '[boot]' >> /etc/wsl.conf
+echo 'systemd=true' >> /etc/wsl.conf
 
 # Clean up
 rm /root/setup_debian.sh
-'@ -replace "`r`n", "`n" | Set-Content -Path $setupScriptPath -Force -NoNewline -Encoding UTF8
+"@ -replace "`r`n", "`n" | Set-Content -Path $setupScriptPath -Force -NoNewline -Encoding UTF8
 }
 
 # Convert setup script path to WSL path and copy to root
@@ -168,6 +170,10 @@ Write-Output $envVars
 # Run the setup script in WSL
 Write-Message "Running the setup script in WSL..."
 wsl --distribution $wslName --user root -- bash -c "$envVars bash /root/setup_debian.sh"
+
+# Restart the WSL instance
+Write-Message "Restarting the $wslName instance..."
+wsl --terminate $wslName
 
 # New Section: Run assets/setup_nvidia.ps1
 $setupNvidiaScriptPath = Join-Path -Path $scriptDirectory -ChildPath "assets/setup_nvidia.ps1"
