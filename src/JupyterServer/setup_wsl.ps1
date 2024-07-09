@@ -68,7 +68,7 @@ if ($password.Length -eq 0) {
 }
 
 # URL of the Debian root filesystem tar.xz
-$debianTarUrl = "https://github.com/debuerreotype/docker-debian-artifacts/raw/8d227a7d1f698c702d82e7de764ed0a7df65fb7c/bookworm/slim/rootfs.tar.xz"
+$debianTarUrl = "https://cloud-images.ubuntu.com/minimal/releases/noble/release/ubuntu-24.04-minimal-cloudimg-amd64-root.tar.xz"
 $debianTarPath = Join-Path -Path $env:TEMP -ChildPath "debian_rootfs.tar.xz"
 
 # Define a function to download the file with retries

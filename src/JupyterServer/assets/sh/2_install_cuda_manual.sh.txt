@@ -1,0 +1,138 @@
+#!/bin/bash
+
+set -e
+
+# Define the base URL and the destination directory
+BASE_URL="https://developer.download.nvidia.com/compute/cuda/repos/debian12/x86_64/"
+DEST_DIR="$HOME/nvidia-cuda-packages"
+
+# Create the destination directory
+mkdir -p "$DEST_DIR"
+cd "$DEST_DIR"
+
+# List of essential packages to download
+PACKAGES=(
+  "cuda-toolkit-12-5_12.5.1-1_amd64.deb"
+  "cuda-drivers-555_555.42.06-1_amd64.deb"
+  "cuda-runtime-12-5_12.5.1-1_amd64.deb"
+  "libcudnn9-cuda-12_9.2.1.18-1_amd64.deb"
+  "libcudnn9-dev-cuda-12_9.2.1.18-1_amd64.deb"
+  "cuda-command-line-tools-12-5_12.5.1-1_amd64.deb"
+  "cuda-compiler-12-5_12.5.1-1_amd64.deb"
+  "cuda-nvcc-12-5_12.5.82-1_amd64.deb"
+)
+
+# Download the essential packages
+echo "Downloading NVIDIA CUDA and cuDNN packages..."
+for package in "${PACKAGES[@]}"; do
+  if [ ! -f "$package" ]; then
+    wget "${BASE_URL}${package}" -P "$DEST_DIR"
+  else
+    echo "$package already exists, skipping download."
+  fi
+done
+
+# Extract dependencies from downloaded packages
+DEPENDENCIES=()
+for package in "${PACKAGES[@]}"; do
+  DEPS=$(dpkg-deb -f "$package" Depends | sed 's/, /\n/g' | awk '{print $1}')
+  DEPENDENCIES+=($DEPS)
+done
+
+# Remove duplicate dependencies
+DEPENDENCIES=($(echo "${DEPENDENCIES[@]}" | tr ' ' '\n' | sort -u | tr '\n' ' '))
+
+# Function to find the latest version of a dependency
+find_latest_dependency() {
+  local dep=$1
+  local file_list=$(wget -qO- "${BASE_URL}" | grep -oP "${dep}[_a-zA-Z0-9.-]*\.deb" | head -n 1)
+  if [ -n "$file_list" ]; then
+    echo "$file_list"
+  else
+    echo ""
+  fi
+}
+
+# Create a file to store the URLs of dependencies to be downloaded
+DEPENDENCY_URLS_FILE="dependency_urls.txt"
+> "$DEPENDENCY_URLS_FILE"
+
+# Find the latest version of each dependency and add to the download list
+echo "Finding dependencies..."
+for dep in "${DEPENDENCIES[@]}"; do
+  latest_dep=$(find_latest_dependency "$dep")
+  if [ -n "$latest_dep" ]; then
+    if [ ! -f "$latest_dep" ]; then
+      echo "${BASE_URL}${latest_dep}" >> "$DEPENDENCY_URLS_FILE"
+    else
+      echo "$latest_dep already exists, skipping download."
+    fi
+  else
+    echo "Dependency not found in CUDA repo: $dep"
+  fi
+done
+
+# Download dependencies in parallel
+echo "Downloading dependencies in parallel..."
+if [ -s "$DEPENDENCY_URLS_FILE" ]; then
+  cat "$DEPENDENCY_URLS_FILE" | xargs -n 1 -P 8 wget -P "$DEST_DIR"
+else
+  echo "No dependencies to download from the CUDA repository."
+fi
+
+# Function to install packages and handle missing dependencies
+install_packages() {
+  local packages=("$@")
+  for package in "${packages[@]}"; do
+    if ! sudo dpkg -i "$package"; then
+      # Capture missing dependencies from the error output
+      missing_deps=$(dpkg -i "$package" 2>&1 | grep "depends on" | awk -F ' ' '{print $7}')
+      for dep in $missing_deps; do
+        latest_dep=$(find_latest_dependency "$dep")
+        if [ -n "$latest_dep" ]; then
+          if [ ! -f "$latest_dep" ]; then
+            wget "${BASE_URL}${latest_dep}" -P "$DEST_DIR" || echo "Failed to download dependency: $latest_dep"
+          else
+            echo "$latest_dep already exists, skipping download."
+          fi
+        else
+          echo "Dependency not found in CUDA repo: $dep"
+        fi
+      done
+    fi
+  done
+}
+
+# Update the package list and install the required dependencies
+echo "Updating package list and installing dependencies..."
+sudo apt update
+sudo apt install -y build-essential dkms
+
+# Install the downloaded packages
+echo "Installing downloaded packages..."
+install_packages "${PACKAGES[@]}"
+
+# Install the downloaded dependencies
+echo "Installing dependencies..."
+for dep in "${DEPENDENCIES[@]}"; do
+  if [[ -f "${DEST_DIR}/$(basename $dep)"*.deb ]]; then
+    sudo dpkg -i "${DEST_DIR}/$(basename $dep)"*.deb || true
+  fi
+done
+
+# Fix any dependency issues
+echo "Fixing dependencies..."
+sudo apt-get install -f -y
+
+# Verify installation
+echo "Verifying CUDA installation..."
+nvcc --version || echo "CUDA installation verification failed."
+
+echo "Verifying cuDNN installation..."
+cat /usr/include/cudnn_version.h | grep CUDNN_MAJOR -A 2 || echo "cuDNN installation verification failed."
+
+echo "Verifying NVIDIA driver installation..."
+nvidia-smi || echo "NVIDIA driver installation verification failed."
+
+
+echo "Installation completed successfully!"
