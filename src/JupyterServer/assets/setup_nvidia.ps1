@@ -76,7 +76,7 @@ wsl --set-default-version 2
 # Check if NVIDIA driver is installed
 if (-not (Check-NvidiaDriver)) {
     # Download and install the latest NVIDIA driver for Windows
-    $nvidiaDriverUrl = "https://us.download.nvidia.com/Windows/531.61/531.61-desktop-win10-win11-64bit-international-dch-whql.exe"
+    $nvidiaDriverUrl = "https://us.download.nvidia.com/Windows/555.99/555.99-desktop-win10-win11-64bit-international-dch-whql.exe"
     $nvidiaDriverPath = Join-Path -Path $env:TEMP -ChildPath "nvidia_driver.exe"
 
     Write-Message "Downloading the latest NVIDIA driver..."
