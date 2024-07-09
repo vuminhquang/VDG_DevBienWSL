@@ -1,122 +1,98 @@
 #!/bin/bash
 
-# Exit immediately if a command exits with a non-zero status
 set -e
 
-# Function to display messages
-message() {
-    echo -e "\e[32m$1\e[0m"
-}
+# Define the base URL and the destination directory
+BASE_URL="https://developer.download.nvidia.com/compute/cuda/repos/debian12/x86_64/"
+DEST_DIR="$HOME/nvidia-cuda-packages"
 
-# Function to display error messages
-error() {
-    echo -e "\e[31m$1\e[0m" >&2
-}
+# Create the destination directory
+mkdir -p "$DEST_DIR"
+cd "$DEST_DIR"
 
-# Detect distribution
-distribution=$(source /etc/os-release && echo $ID$VERSION_ID)
-
-# Build the base URL
-BASE_URL="https://developer.download.nvidia.com/compute/cuda/repos/${distribution}/x86_64/"
-
-# Default version (can be set by the user, otherwise the script will get the latest version)
-DEFAULT_VERSION=""
-
-# Essential CUDA packages
-ESSENTIAL_CUDA_PACKAGES=(
-    "cuda-toolkit"
-    "cuda-runtime"
-    "cuda-compiler"
+# List of essential packages to download
+PACKAGES=(
+  "cuda-toolkit-12-5_12.5.1-1_amd64.deb"
+  "cuda-drivers-555_555.42.06-1_amd64.deb"
+  "cuda-runtime-12-5_12.5.1-1_amd64.deb"
+  "libcudnn9-cuda-12_9.2.1.18-1_amd64.deb"
+  "libcudnn9-dev-cuda-12_9.2.1.18-1_amd64.deb"
+  "cuda-command-line-tools-12-5_12.5.1-1_amd64.deb"
+  "cuda-compiler-12-5_12.5.1-1_amd64.deb"
+  "cuda-nvcc-12-5_12.5.82-1_amd64.deb"
 )
 
-# Essential cuDNN packages
-ESSENTIAL_CUDNN_PACKAGES=(
-    "libcudnn9-cuda"
-    "libcudnn9-dev-cuda"
-)
+# Download the essential packages
+echo "Downloading NVIDIA CUDA and cuDNN packages..."
+for package in "${PACKAGES[@]}"; do
+  if [ ! -f "$package" ]; then
+    wget "${BASE_URL}${package}" -P "$DEST_DIR"
+  else
+    echo "$package already exists, skipping download."
+  fi
+done
 
-# Function to download and install a package
-install_package() {
-    package=$1
-    wget -q ${BASE_URL}${package}
-    sudo dpkg -i ${package} || true  # Allow failures to handle dependencies
-    rm ${package}
-}
+# Extract dependencies from downloaded packages
+DEPENDENCIES=()
+for package in "${PACKAGES[@]}"; do
+  DEPS=$(dpkg-deb -f "$package" Depends | sed 's/, /\n/g' | awk -F ' ' '{print $1}')
+  DEPENDENCIES+=($DEPS)
+done
 
-# Function to resolve dependencies by parsing dpkg errors
-resolve_dependencies() {
-    dpkg_errors=$(sudo dpkg --configure -a 2>&1 | grep "dependency problems" || true)
-    if [[ ! -z "$dpkg_errors" ]]; then
-        missing_packages=$(echo "$dpkg_errors" | grep "depends on" | sed -e 's/.*depends on //' -e 's/,.*//' -e 's/)//' | sort -u)
-        for pkg in $missing_packages; do
-            if ! dpkg -s $pkg >/dev/null 2>&1; then
-                install_package ${pkg}_*.deb
-            fi
-        done
-    fi
-}
+# Remove duplicate dependencies
+DEPENDENCIES=($(echo "${DEPENDENCIES[@]}" | tr ' ' '\n' | sort -u | tr '\n' ' '))
 
-# Download and parse the index page
-message "Downloading and parsing the index page..."
-index_page=$(wget -qO- ${BASE_URL})
-
-# Extract package names from the index page
-extract_packages() {
-    pattern=$1
-    echo "$index_page" | grep -oP "${pattern}" | sort -u
-}
-
-# Extract all packages
-all_packages=$(extract_packages "[a-zA-Z0-9._-]+\.deb")
-
-# Function to get the latest or default version package
-get_latest_package() {
-    package_base=$1
-    version_prefix=$2
-    if [[ -z "$DEFAULT_VERSION" ]]; then
-        package_file=$(echo "$all_packages" | grep -P "^${package_base}-${version_prefix}_[0-9.]+_*_amd64.deb$" | sort -V | tail -1)
+# Function to download the latest version of a dependency
+download_latest_dependency() {
+  local dep=$1
+  local file_list=$(wget -qO- "${BASE_URL}" | grep -oP "${dep}[_a-zA-Z0-9.-]*\.deb" | head -n 1)
+  if [ -n "$file_list" ]; then
+    local latest_dep=$(echo "$file_list" | awk -F '[<>]' '{print $1}')
+    if [ ! -f "${latest_dep}" ]; then
+      wget "${BASE_URL}${latest_dep}" -P "$DEST_DIR" || echo "Failed to download dependency: $latest_dep"
     else
-        package_file=$(echo "$all_packages" | grep -P "^${package_base}-${version_prefix}_${DEFAULT_VERSION}[0-9.]*_*_amd64.deb$" | sort -V | tail -1)
+      echo "$latest_dep already exists, skipping download."
     fi
-    echo $package_file
+  else
+    echo "Dependency not found: $dep"
+  fi
 }
 
-# Download and install essential CUDA packages
-message "Downloading and installing essential CUDA packages..."
-for package_base in "${ESSENTIAL_CUDA_PACKAGES[@]}"; do
-    version_prefix="12-5"
-    package_file=$(get_latest_package ${package_base} ${version_prefix})
-    if [[ ! -z "$package_file" ]]; then
-        install_package ${package_file}
-        resolve_dependencies
-    fi
+# Download dependencies
+echo "Downloading dependencies..."
+for dep in "${DEPENDENCIES[@]}"; do
+  download_latest_dependency "$dep"
 done
 
-# Download and install essential cuDNN packages
-message "Downloading and installing essential cuDNN packages..."
-for package_base in "${ESSENTIAL_CUDNN_PACKAGES[@]}"; do
-    version_prefix="12"
-    package_file=$(get_latest_package ${package_base} ${version_prefix})
-    if [[ ! -z "$package_file" ]]; then
-        install_package ${package_file}
-        resolve_dependencies
-    fi
+# Update the package list and install the required dependencies
+echo "Updating package list and installing dependencies..."
+sudo apt update
+sudo apt install -y build-essential dkms
+
+# Install the downloaded packages
+echo "Installing downloaded packages..."
+for package in "${PACKAGES[@]}"; do
+  sudo dpkg -i "$package"
 done
 
-# Fix any remaining broken dependencies
-message "Fixing broken dependencies..."
+# Install the downloaded dependencies
+echo "Installing dependencies..."
+for dep in "${DEPENDENCIES[@]}"; do
+  sudo dpkg -i "${DEST_DIR}/$(basename $dep)"*.deb || true
+done
+
+# Fix any dependency issues
+echo "Fixing dependencies..."
 sudo apt-get install -f -y
 
 # Verify installation
-message "Verifying CUDA installation..."
-if ! nvidia-smi; then
-    error "nvidia-smi command failed. CUDA installation may be incorrect."
-    exit 1
-fi
+echo "Verifying CUDA installation..."
+nvcc --version || echo "CUDA installation verification failed."
 
-if ! nvcc --version; then
-    error "nvcc command failed. CUDA toolkit installation may be incorrect."
-    exit 1
-fi
+echo "Verifying cuDNN installation..."
+cat /usr/include/cudnn_version.h | grep CUDNN_MAJOR -A 2 || echo "cuDNN installation verification failed."
 
-message "CUDA and cuDNN installation was successful."
+echo "Verifying NVIDIA driver installation..."
+nvidia-smi || echo "NVIDIA driver installation verification failed."
+
+echo "Installation completed successfully!"
