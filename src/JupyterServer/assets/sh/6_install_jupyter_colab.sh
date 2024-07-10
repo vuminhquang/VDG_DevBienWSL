@@ -78,7 +78,7 @@ source ~/jupyter_env/bin/activate
 
 # Start Jupyter Notebook bound to localhost and Tailscale IP
 echo "Starting Jupyter Notebook..."
-jupyter notebook --NotebookApp.allow_origin='https://colab.research.google.com' --ip=127.0.0.1 --ip=$TAILSCALE_IP --port=8888 --NotebookApp.port_retries=0
+jupyter notebook --NotebookApp.allow_origin='https://colab.research.google.com' --ip=$TAILSCALE_IP --port=8888 --NotebookApp.port_retries=0
 EOF
 
 sudo chmod +x $RUN_SCRIPT || { echo_message "Failed to create run script."; exit 1; }
