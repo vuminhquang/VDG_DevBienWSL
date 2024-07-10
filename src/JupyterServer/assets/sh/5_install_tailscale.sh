@@ -10,7 +10,11 @@ TAILSCALE_SERVICE="/etc/systemd/system/tailscale.service"
 
 # Install Tailscale
 echo_message "Installing Tailscale..."
-curl -fsSL https://tailscale.com/install.sh | sh
+#curl -fsSL https://tailscale.com/install.sh | sh
+curl -fsSL https://pkgs.tailscale.com/stable/ubuntu/kinetic.noarmor.gpg | sudo tee /usr/share/keyrings/tailscale-archive-keyring.gpg >/dev/null
+curl -fsSL https://pkgs.tailscale.com/stable/ubuntu/kinetic.tailscale-keyring.list | sudo tee /etc/apt/sources.list.d/tailscale.list
+sudo apt-get update
+sudo apt-get install tailscale
 
 # Start Tailscale service
 echo_message "Starting Tailscale service..."
