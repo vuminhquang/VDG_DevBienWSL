@@ -68,8 +68,8 @@ if ($password.Length -eq 0) {
 }
 
 # URL of the Debian root filesystem tar.xz
-$debianTarUrl = "https://cloud-images.ubuntu.com/minimal/releases/noble/release/ubuntu-24.04-minimal-cloudimg-amd64-root.tar.xz"
-$debianTarPath = Join-Path -Path $env:TEMP -ChildPath "debian_rootfs.tar.xz"
+$debianTarUrl = "https://partner-images.canonical.com/oci/oracular/current/ubuntu-oracular-oci-amd64-root.tar.gz"
+$debianTarPath = Join-Path -Path $env:TEMP -ChildPath "ubuntu-oracular-oci-amd64-root.tar.gz"
 
 # Define a function to download the file with retries
 function Download-File {
