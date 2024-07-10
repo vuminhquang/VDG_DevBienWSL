@@ -96,7 +96,7 @@ if (-not (Check-GeForceExperience)) {
     if (Download-File -url $geforceExperienceUrl -outputPath $geforceExperiencePath) {
         Write-Message "Installing GeForce Experience..."
         try {
-            Start-Process -FilePath $geforceExperiencePath -ArgumentList "/silent" -Wait
+            Start-Process -FilePath $geforceExperiencePath -ArgumentList "/silent /noreboot" -Wait
             Write-Message "GeForce Experience installed successfully."
         } catch {
             Write-Host "Failed to install GeForce Experience. Continuing with setup." -ForegroundColor Yellow
