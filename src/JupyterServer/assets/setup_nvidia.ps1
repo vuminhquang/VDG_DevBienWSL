@@ -69,10 +69,6 @@ function Check-GeForceExperience {
     }
 }
 
-# Ensure WSL 2 is installed and usable
-Write-Message "Checking WSL version..."
-wsl --set-default-version 2
-
 # Check if NVIDIA driver is installed
 if (-not (Check-NvidiaDriver)) {
     # Download and install the latest NVIDIA driver for Windows
@@ -109,52 +105,5 @@ if (-not (Check-GeForceExperience)) {
         Write-Host "Failed to download GeForce Experience. Continuing with setup." -ForegroundColor Yellow
     }
 }
-
-# Create a script to set up CUDA and NVIDIA runtime in WSL
-$setupCudaScript = @'
-#!/bin/bash
-set -e
-
-# Update and install necessary packages
-sudo apt-get update
-sudo apt-get install -y build-essential
-
-# Add NVIDIA package repositories
-distribution=$(source /etc/os-release && echo $ID$VERSION_ID)
-curl -s -L https://nvidia.github.io/nvidia-docker/gpgkey | sudo apt-key add -
-curl -s -L https://nvidia.github.io/nvidia-docker/$distribution/nvidia-docker.list | sudo tee /etc/apt/sources.list.d/nvidia-docker.list
-
-# Install CUDA toolkit and NVIDIA container runtime
-sudo apt-get update
-sudo apt-get install -y cuda libcudnn8 libcudnn8-dev nvidia-container-runtime
-
-# Verify installation
-nvidia-smi
-nvcc --version
-
-echo "CUDA and NVIDIA runtime installed successfully."
-'@
-
-# Save the script to a temporary file
-$setupCudaScriptPath = Join-Path -Path $env:TEMP -ChildPath "setup_cuda.sh"
-$setupCudaScript | Set-Content -Path $setupCudaScriptPath -NoNewline -Encoding UTF8
-
-# Convert Windows path to WSL path
-function Convert-WindowsPathToWslPath {
-    param (
-        [string]$windowsPath
-    )
-    $wslPath = $windowsPath -replace '\\', '/'
-    $wslPath = $wslPath -replace ':', ''
-    return "/mnt/" + $wslPath.Substring(0, 1).ToLower() + $wslPath.Substring(1)
-}
-
-$setupCudaWslPath = Convert-WindowsPathToWslPath -windowsPath $setupCudaScriptPath
-
-# Copy and run the setup script in WSL
-Write-Message "Setting up CUDA and NVIDIA runtime in WSL..."
-wsl --distribution $wslName --user $username cp $setupCudaWslPath /home/$username/setup_cuda.sh
-wsl --distribution $wslName --user $username chmod +x /home/$username/setup_cuda.sh
-wsl --distribution $wslName --user $username bash /home/$username/setup_cuda.sh
 
 Write-Message "NVIDIA GPU setup in WSL completed successfully!"

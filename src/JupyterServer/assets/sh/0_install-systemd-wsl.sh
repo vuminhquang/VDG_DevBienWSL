@@ -5,6 +5,12 @@ function print_message {
     echo -e "\n\033[1;32m$1\033[0m\n"
 }
 
+# Preconfigure tzdata to avoid interactive prompt
+export DEBIAN_FRONTEND=noninteractive
+sudo ln -fs /usr/share/zoneinfo/Etc/UTC /etc/localtime
+sudo dpkg-reconfigure -f noninteractive tzdata
+
+
 # Step 1: Update and Upgrade Your System
 print_message "Updating and upgrading the system..."
 sudo apt update && sudo apt upgrade -y

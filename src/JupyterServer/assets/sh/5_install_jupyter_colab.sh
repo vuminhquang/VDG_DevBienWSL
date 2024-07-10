@@ -44,7 +44,7 @@ jupyter serverextension enable --py jupyter_http_over_ws
 # Step 6: Start a local Jupyter server and authenticate
 echo "Starting the local Jupyter server..."
 echo "Note down the link you get from this screen. You will be using it in the next step."
-jupyter notebook --NotebookApp.allow_origin='https://colab.research.google.com' --port=8888 --NotebookApp.port_retries=0
+echo "jupyter notebook --NotebookApp.allow_origin='https://colab.research.google.com' --port=8888 --NotebookApp.port_retries=0"
 
 # Instructions for connecting to the local runtime
 echo "To connect to the local runtime:"
