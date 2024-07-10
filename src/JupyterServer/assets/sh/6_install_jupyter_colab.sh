@@ -12,11 +12,11 @@ DESKTOP_ENTRY="/usr/share/applications/jupyter_colab.desktop"
 # Function to install python3-venv if it's not already installed
 install_python_venv() {
     if ! dpkg -s python3-venv >/dev/null 2>&1; then
-        echo "python3-venv is not installed. Installing it now..."
+        echo_message "python3-venv is not installed. Installing it now..."
         sudo apt update
         sudo apt install -y python3-venv
     else
-        echo "python3-venv is already installed."
+        echo_message "python3-venv is already installed."
     fi
 }
 
@@ -46,7 +46,7 @@ pip install jupyter_http_over_ws
 
 # Enable the extension
 echo_message "Enabling the Jupyter HTTP-over-WebSocket extension..."
-jupyter serverextension enable --py jupyter_http_over_ws
+jupyter server extension enable --py jupyter_http_over_ws
 
 # Ensure Tailscale is installed
 echo_message "Installing required packages..."
@@ -63,7 +63,7 @@ echo "Starting Tailscale..."
 sudo tailscale up
 
 # Get the Tailscale IP address
-TAILSCALE_IP=$(tailscale ip)
+TAILSCALE_IP=$(tailscale ip --4)
 
 # Check if Tailscale IP was fetched successfully
 if [ -z "$TAILSCALE_IP" ]; then
