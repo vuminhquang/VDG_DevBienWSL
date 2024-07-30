@@ -142,8 +142,9 @@ echo '${username} ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers
 mkdir -p /etc
 echo '[user]' >> /etc/wsl.conf
 echo 'default=${username}' >> /etc/wsl.conf
-echo '[boot]' >> /etc/wsl.conf
-echo 'systemd=true' >> /etc/wsl.conf
+# not use systemd yet as some system may block this one
+#echo '[boot]' >> /etc/wsl.conf
+#echo 'systemd=true' >> /etc/wsl.conf
 
 # Clean up
 rm /root/setup_debian.sh
